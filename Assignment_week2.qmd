@@ -1,0 +1,297 @@
+---
+title: "Assignment_week2"
+format: html
+editor: visual
+---
+
+## Homework 2: dplyr
+
+#### Loading Packagages
+
+```{r, echo = FALSE}
+library(nycflights13)
+library(tidyverse)
+library(modelsummary)
+library(flextable)
+library(tinytex)
+
+```
+
+##### Y4.2.5: all six exercises
+
+refamiliarizing myself with the data
+
+```{r}
+View(flights)
+```
+
+Q1: In a single pipeline for each condition, find all flights that meet the conditions:
+
+-   Had an arrival delay of two or more hours
+-   Flew to Houston (IAH or HOU) *filter()*
+-   Were operated by United, American, or Delta
+-   Departed in summer (July, August, and September)
+-   Arrived more than two hours late, but didn't leave late *filter*
+-   Were delayed by at least an hour, but made up over 30 minutes in flight
+
+```{r}
+flights4Q1 <-  flights |> 
+  filter(arr_delay >= 120) |> 
+  filter(dest == "IAH" & dest == "HOU") |> 
+  filter(carrier == "UA" & carrier == "AA" & carrier == "DL") |> 
+  filter(month %in% c(7:9)) |> 
+  filter(dep_delay <= 0) |> 
+  filter(dep_delay >= 60 & air_time > 30)
+  
+library(tidyverse)
+library(nycflights13)
+
+ flights %>%
+  filter(
+    arr_delay >= 120,                     
+    dest %in% c("IAH", "HOU"),            
+    carrier %in% c("UA", "AA", "DL"), 
+    month %in% c(7, 8, 9),      
+    arr_delay > 120 & dep_delay <= 0,   
+    dep_delay >= 60 & air_time > 30)
+
+```
+
+##### Q2: Sort flights to find the flights with longest departure delays. Find the flights that left earliest in the morning.
+
+```{r}
+flights |> 
+  arrange(desc(dep_delay), dep_time) 
+
+flights |> 
+  arrange(dep_time)  
+  
+```
+
+*in a single pipe, this seems weird. Is the* `arrange` *function actually sorting both? i am assuming it defaults to arranging by dep_delay and then when that has a repeatable value then it arranges those by dep_time.*
+
+##### Q3: Sort flights to find the fastest flights. (Hint: Try including a math calculation inside of your function.)
+
+```{r}
+flight_speed <- flights |> 
+  mutate(speed = distance / air_time) |> 
+  arrange(desc(speed))
+
+head(fastest_flights)
+```
+
+##### Q4: Was there a flight on every day of 2013?
+
+```{r}
+flights |> 
+  drop_na() |> 
+  distinct(month, day)
+  
+```
+
+Yes! prints 365 rows *is there a better way to do this?*
+
+##### Q5: Which flights traveled the farthest distance? Which traveled the least distance?
+
+```{r}
+flights |> 
+  distinct()
+  arrange(desc(distance)) |> 
+  select(month, day, flight, origin, dest, distance) |> 
+  head()
+
+flights |> 
+  distinct() |> 
+  arrange(distance) |> 
+  select(month, day, flight, origin, dest, distance) |> 
+  head()
+```
+
+##### Q6: Does it matter what order you used filter() and arrange() if you're using both? Why/why not? Think about the results and how much work the functions would have to do.
+
+YES! Def matters. Take this for example:
+
+```{r}
+# Arrange the entire dataset based on departure delay
+arranged_flights <- flights %>%
+  arrange(dep_delay) %>%
+  filter(origin == "JFK", dep_delay > 60)
+
+#Filtering to select flights from JFK that were delayed an hour +
+filter_flight <- flights |> 
+  filter(origin == "JFK", dep_delay)
+```
+
+*when do we use `&` within dplyr functions? i assumed instead of a comma i should have done `&` ... obviously, the comma is what worked...is `&` for when you want to combine two conditions within a single pipe function?*
+
+### 4.3.5: all seven exercises
+
+##### Q1: Compare dep_time, sched_dep_time, and dep_delay. How would you expect those three numbers to be related?
+
+```{r}
+flights |> 
+  select(dep_time, sched_dep_time, dep_delay)
+```
+
+##### Q2: Brainstorm as many ways as possible to select dep_time, dep_delay, arr_time, and arr_delay from flights.
+
+```{r}
+flights |> 
+  select(dep_time, dep_delay, arr_time, arr_delay)
+
+flights |> 
+  relocate(sched_arr_time, sched_dep_time) |> 
+  select(c(6:9))
+
+flights |> 
+  relocate(sched_arr_time, sched_dep_time) |> 
+  select(dep_time:arr_delay)
+
+flights |> 
+  select(starts_with("dep"), starts_with("arr"),
+         ends_with("delay"), ends_with("time")) |> 
+  select(!c(5:7))
+  
+
+```
+
+Alright that is all my brains got rn.
+
+##### Q3: What happens if you specify the name of the same variable multiple times in a select() call?
+
+```{r}
+flights |> 
+  select(arr_time, carrier, carrier, dep_time, carrier)
+```
+
+it does it only once!
+
+##### Q4: What does the any_of() function do? Why might it be helpful in conjunction with this vector?
+
+```{r}
+flights |> 
+  select(any_of("dep_time"))
+
+flights |> 
+  select(!any_of("dep_time"))
+
+flights |> 
+  select(dep_time)
+```
+
+SO, it is supposed to be helpful for removing variables from the data set. So likely my NA's... *Question... why do we need quotes here inside any_of? Also why when I addded the ! it like didn't do anything? or it did and I cannot tell?*
+
+##### Q5: Does the result of running the following code surprise you? How do the select helpers deal with upper and lower case by default? How can you change that default?
+
+```{r}
+flights |> select(contains("TIME"))
+
+flights |> 
+  select(contains("TIME", ignore.case = FALSE))
+
+```
+
+Yes surprised me because its in all caps and it was still working! Looked at the definition page shows us that we would `ignore.case = FALSE`
+
+##### Q6: Rename air_time to air_time_min to indicate units of measurement and move it to the beginning of the data frame.
+
+```{r}
+flights |> 
+  mutate(air_time_min = air_time) |> 
+  relocate(air_time_min)
+```
+
+##### Q7:Why doesn't the following work, and what does the error mean?
+
+```{r, echo = FALSE}
+flights |> 
+  select(tailnum) |> 
+  arrange(arr_delay)
+#> Error in `arrange()`:
+#> ℹ In argument: `..1 = arr_delay`.
+#> Caused by error:
+#> ! object 'arr_delay' not found
+```
+
+Well because you selected tailnum that tells the next pipe that `tailnum` is the only column available to look at within the line of code!
+
+### 4.5.7: all six exercises
+
+##### Q1:Which carrier has the worst average delays? Challenge: can you disentangle the effects of bad airports vs. bad carriers? Why/why not? (Hint: think about flights \|\> group_by(carrier, dest) \|\> summarize(n()))
+
+```{r}
+
+```
+
+##### Q2: Find the flights that are most delayed upon departure from each destination.
+
+```{r}
+
+```
+
+##### Q3: How do delays vary over the course of the day. Illustrate your answer with a plot.
+
+```{r}
+
+```
+
+##### Q4: What happens if you supply a negative n to slice_min() and friends?
+
+```{r}
+
+```
+
+##### Q5: Explain what count() does in terms of the dplyr verbs you just learned. What does the sort argument to count() do?
+
+```{r}
+
+```
+
+##### Q6:
+
+Suppose we have the following tiny data frame:
+
+```{r}
+df <- tibble(
+  x = 1:5,
+  y = c("a", "b", "a", "a", "b"),
+  z = c("K", "K", "L", "L", "K")
+)
+```
+
+a.  Write down what you think the output will look like, then check if you were correct, and describe what group_by() does.
+
+```{r}
+df |>
+  group_by(y)
+```
+
+b.  Write down what you think the output will look like, then check if you were correct, and describe what arrange() does. Also comment on how it's different from the group_by() in part (a)?
+
+```{r}
+
+```
+
+c.  Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does.
+
+```{r}
+
+```
+
+d.  Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does. Then, comment on what the message says.
+
+```{r}
+
+```
+
+e.  Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does. How is the output different from the one in part (d).
+
+```{r}
+
+```
+
+f.  Write down what you think the outputs will look like, then check if you were correct, and describe what each pipeline does. How are the outputs of the two pipelines different?
+
+```{r}
+
+```

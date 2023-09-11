@@ -1,0 +1,180 @@
+---
+title: "Week_2"
+author: "Rachel Kaufman"
+date: "2023-09-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+```
+ 
+ 
+ 
+```{r}
+
+i <- seq(2, nrow(mtcars), by =2)
+mtcars %>% 
+  slice(i)
+```
+
+
+
+## **Tuesday Lecture**
+
+```{r}
+mtcars$mpg %>% 
+  mean()
+
+mtcars |> 
+  filter(am == 1) |>  ## keep rows where am is = 1
+  pull(mpg) |> ##instead of using the $ sign argument from base R
+  mean()
+
+```
+
+
+looking at some penguin shit
+```{r}
+library(palmerpenguins)
+data("penguins")
+penguins
+```
+
+### Observational vs. Experimental data
+
+We typically use obesrvational data :p shocking!
+```{r}
+library(openintro)
+data(bac)
+data("biontech_adolescents")
+table(biontech_adolescents$group,
+      biontech_adolescents$outcome)
+View(bac)
+
+##relative path
+GSS2022 <- read_dta("Data/GSS2022.dta")
+
+
+```
+
+Variable means "stuff that varies"
+SooOoo we have the categorical and numeric
+
+#### Categorical variables: binary, nominal, ordinal
+- can be encocded numerically, but this does not make it a numeric variable. A categorical variable has assigned values but the values are not meaningful for cat variables. Categorical variables can be stored as a numeric value but has NO! inherent ordering 
+
+Ordinal Variables --> this distance between the order is uncertain BUT we know that the order does matter
+
+#### Numeric Variables: interval and ratio variables
+an interval variable means that the gap between every unit is the same. SO! The difference is whether or not the 0 is meaningful. So with things like temperature, it would not be 3x or twice as much etc., becauseeeeeeee 0F does not have an actual have a meaningful thing. 
+-- for example, in `mtcars`, cyl is a numeric variable. Because you can say "there are 2x cylinders" when one has 4 and then one has 8. 
+
+*general definition of types of variables:* 
+binary, nominal, ordinal (we know what order to put em in but dont know space between), interval (we know the space btwn and it is equal), ratio (the zero is important here and we can say 2x a month)
+
+## Thursday Lecture
+**dplyr note taking: thursday lecture**
+key goals: `slice()` (slicing data frames), `filter()` (keeping some rows, getting rid of others), select (keeps some columns and not others), `mutate()`(make new variables), `group_by()`, `summarize()`, and `count()`
+*control L clears out your console*
+#### `count()` and `group_by()`
+```{r}
+library(nycflights13)
+data(flights)
+glimpse(flights) #glimpse transposes
+
+flights |> 
+  count(origin, dest) ##this is long form and gives you a nice clear column with sample count
+
+##compare these two commands
+
+flights |> 
+  group_by(origin) |> #grouping the rows by origin type
+  summarise(count = n()) 
+
+flights |> 
+  summarise(count = n()) 
+```
+
+####`summarize()`
+
+so `summarize(*formula for new variable*)` is what we use to collapse information and to make a new variable. Count is a name to a new variable, see it being replaced with num_flights in the second command... *formula for new variable* you pick a name
+```{r}
+flights |> 
+  summarise(count = n())
+
+flights |> 
+  group_by(origin) |>
+  summarise(num_flights = n()) 
+
+flights |> 
+  group_by(origin) |>
+  summarise(n()) ##just not using a name 
+```
+
+#### `class()`
+Data frame is a special kinda matrix. A TIBBLE! is a special data frame :0 tibble is a tidyverse enhanced data frame. `class()` will let you find out what kind of "thing" something is... so `class(flights)` is a tbl_df, a tbl, and a data.frame! So its three types (tbl == tibble). Data frames have them named, but tibbles would have the name as its own column. So with `class(mtcars)` as only a data frame, soooOooOoo the list of car types is not actually a column but it is a property of the columns.  
+```{r}
+data(mtcars)
+class(mtcars)
+as_tibble(mtcars)
+mtcars_tbl <- as_tibble(mtcars,
+                        rownames = "car")
+```
+
+`mutate()`
+So, let's look at creating the delay time variable as TRUE or FALSE for the flights dataset. As long as we are above 0 it works as a ratio variable, but this is a interval ratio. So, - means it is leaving early by x number of minutes and a + integer means it is delayed by x number of minutes. First, we need to create a new column for `LATE.` SO! First we know we want to create a new binary variable for whether or not it was late. So when a flight has a positive integer, it is *true* that it is late. If the integer is negative, that means it is not late, therefore it is *false*. So, we can save it as T/F but, it makes more sense to do 0 and 1. TRUE = 1 (meaning it was delayed) & FALSE = 0 (false meaning it was not delayed). So, how do we add a new variable to a data set?
+.. so mutate(*new name for column* = *formula for said new column*). The formula to create a binary column is going to use the `if_else()` function. This is how we would set up function as a formula for our new variable. So if `dep_delay` is > 0 (which means it is TRUE because it is delayed as signified by any integer greater than 0), then put a 1 and all other cases put 0. *describing what is in line 134*.
+```{r}
+flights <- flights |> 
+  mutate(late = if_else(
+    dep_delay > 0, 1, 0))
+
+flights <- flights |> 
+  mutate(late = if_else(
+    dep_delay > 0, 1L, 0L))
+
+flights |> 
+  as.integer(dep_delay > 0)
+View(flights)
+```
+So! We created a new column. Now, we look at it via `View(flights)` we can see that our new column is stored as a dbl. But this takes up a lotttttt more storage just in case the variable has more than just integers. To create this as an integer, you can use `as.integer`, or you can add an `L` as seen in the second example on line 135. 
+
+Now we want to know which airlines are late most frequently? 
+```{r}
+flights |> 
+  drop_na() |> 
+  group_by(carrier) |> 
+  summarize(prop_late = mean(late)) |> 
+  arrange(desc(prop_late))
+```
+Now we have 20 separate little data sets because we have grouped by carrier. so for each carrier what proportion of your flights are late. Again we create a name for the new column `prop_late` and equal it to what formula we are trying to use to create a proportion. So because the new column late is 0 or 1, the mean is then how we find the proportion of late flights (that is literally how finding the mean with a variable like that would work. We then use `arrange()` and `desc()` lets us just change it to descending order. 
+
+#### *filter()*
+```{r}
+flights_jfk <- flights |> 
+  filter(origin == "JFK")
+```
+when we are evaluating a logical expression, you will use two equal signs *==* instead of one! So filter for every row
+
+#### *select()* So we want to keep different variables
+```{r}
+flights |> 
+  select(dest, origin)
+
+flights |> 
+  select(-year)
+
+flights |> 
+  select(dep_time:carrier, origin, dest) #this relies on the columns in a particular order! so be cautious of this. 
+```
+
+
+
+
+
+
+
+
