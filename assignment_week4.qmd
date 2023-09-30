@@ -1,0 +1,115 @@
+---
+title: "assignment_week4"
+format: html
+editor: visual
+date: "2023-09-18"
+author: "Rachel Kaufman"
+mainfont: "Georgia"
+format: 
+  html: 
+    theme: cosmo
+    toc: true
+    embed-resources: true
+  pdf:
+    colorlinks: true
+execute: 
+  echo: false
+bibliography: references.bib
+csl: american-journal-of-sociology.csl
+---
+
+## Assignment 4
+
+```{r}
+library(tidyverse)
+theme_set(theme_light())
+```
+
+#### 4.1
+
+```{r}
+x <- rnorm(100000, mean = 0, sd = 1)
+
+
+result <- as_tibble(x) |> 
+  mutate(
+    one_sd = ifelse(abs(x) <= 1, 1, 0),
+    two_sd = ifelse(abs(x) <= 2, 1, 0),
+    above_mean = ifelse(x >= 0, 1, 0),
+    below_mean = ifelse(x <= 0, 1, 0)
+  )  |> 
+  summarize(
+    prob_one_sd = mean(one_sd),
+    prob_two_sd = mean(two_sd),
+    prob_above = mean(above_mean),
+    prob_below = mean(below_mean)
+  )
+
+result
+```
+
+googled for the `abs()` function because i was trying to figure out how to calculate distance from the mean and obviously if i am looking at distance (because mean is at 0 meaning some of my rando numbers will be negative, but i do not want those negatives to be additive, absolute values let me focus on the distance)
+
+#### 4.2
+
+using quantile function
+
+```{r}
+quantile(x)
+```
+
+#### 4.3
+
+creating specific percentiles
+
+```{r}
+quantile(x, probs = c(.005, .995))
+```
+
+#### 4.4
+
+Here ya go...
+
+```{r}
+as_tibble(x) |> 
+ summarize(probability = mean(
+   x >= -2.576 & x <= 2.576))
+```
+
+#### 4.5
+
+Okay, your equation showed up funny at first but I figured to put it in my viewer thing and it fixed it.
+
+```{r}
+sum(runif(n = 20, min = 0, max = 1))
+
+d4.5 <- tibble(id = 1:1e3) |> 
+  rowwise() |> 
+  mutate(x = sum(runif(20)))  
+
+
+ggplot(data = d4.5,
+       mapping = aes(x)) +
+   geom_histogram(bins = 50,
+                  color = "darkblue",
+                  fill = "lightgray")
+```
+
+#### 4.6
+
+Redoing steves simulation!
+
+```{r}
+svy_size <- 2247  # number of people in each "poll"
+
+std_error <- sqrt((1/3) * (2/3) / svy_size)
+std_error
+
+est_prop <- 1/3
+
+0.33 + 1.96*std_error
+0.33 - 1.96*std_error ## "1.96" is roughly "2"!
+
+sd(runif(20)) * sqrt(20)
+
+```

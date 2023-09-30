@@ -1,0 +1,333 @@
+---
+title: "assignment week 3"
+format:
+  html:
+    toc: true
+    html-math-method: katex
+    css: styles.css
+editor: visual
+author: "Rachel Kaufman"
+date: "2023-09-18"
+---
+
+### Homework for Week 3
+
+```{r}
+library(tidyverse)
+data("faithful")
+```
+
+##### **Q1:**
+
+Modify the code below to make the points larger squares and slightly transparent. See ?geom_point for more information on the point layer.
+
+```{r}
+ggplot(
+  data = faithful, 
+  mapping = aes(x = eruptions, y = waiting)
+  ) + 
+  geom_point()
+
+ggplot(faithful) + 
+  geom_point(aes(x = eruptions, y = waiting, color = eruptions < 3), shape = "square", alpha = 0.6, size = 3) 
+
+?geom_point()
+```
+
+##### **Q2:**
+
+Color the two visible clusters in the histogram with different colors.
+
+```{r}
+ggplot(faithful) + 
+  geom_histogram(aes(x = eruptions, fill = eruptions <3),
+                 bins = 50)
+?geom_histogram()
+```
+
+##### **Q3:**
+
+Add a line that separates the two point distributions. See ?geom_abline for how to draw straight lines from a slope and intercept.
+
+this is gonna be ugly but you got it.....
+
+```{r}
+ggplot(faithful) + 
+  geom_histogram(aes(x = eruptions, fill = eruptions <3.2),
+                 bins = 40) +
+      geom_vline(xintercept = 3.25,
+        aes(eruptions))
+```
+
+```{r}
+data("mpg")  ## this dataset lives in the ggplot2 package
+
+mpg |> 
+  ggplot(aes(x = class)) + 
+  geom_bar()
+mpg_counted <- mpg |> 
+  group_by(class) |> 
+  summarize(count = n())
+  
+mpg_counted |> 
+  ggplot() + 
+  geom_bar(aes(x = class, y = count), stat = 'identity')
+
+ggplot(mpg_counted) + ## `mpg_counted` is a summarized version of `mpg`
+  geom_col(aes(x = class, y = count))
+```
+
+### Scales
+
+We can take control by adding one explicitly. All scales follow the same naming conventions---i.e., scale\_<aes>\_<type>. SHIT THIS IS COOL
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = class))
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = class)) + 
+  scale_color_brewer(type = 'qual')
+
+```
+
+##### **Q4:**
+
+Use RColorBrewer::display.brewer.all() to see all the different palettes from Color Brewer and pick your favorite. Modify the code below to use it.
+
+modify the code below to use the color i like i can do that (maybe)
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = class)) + 
+  scale_color_brewer(type = 'qual',
+                     palette = "Blues")
+##type is for type of variables characteristics 
+
+```
+
+##### **Q5:**
+
+Modify the code below to create a bubble chart (scatterplot with size mapped to a continuous variable) showing cyl with size. Make sure that only the present amount of cylinders (4, 5, 6, and 8) are present in the legend.
+
+\
+Hint: The `breaks` argument in the scale is used to control which values are present in the legend.
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = class)) + 
+  scale_color_brewer(type = 'qual') +
+  scale_x_continuous(breaks = c(4, 5, 6, 8))
+```
+
+Tahdah
+
+##### **Q6**
+
+Modify the code below so that color is no longer mapped to the discrete `class` variable, but to the continuous `cty` variable. What happens to the guide?
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = cty, size = cty))
+```
+
+Well the guide now has both a gradient via color for cty and size is for the size in relation to cty when color maps it?\
+The type of guide can be controlled with the `guide` argument in the scale, or with the `guides()` function. Continuous colors have a gradient color bar by default, but setting it to `legend` will turn it back to the standard look. *What happens when multiple aesthetics are mapped to the same variable and uses the guide type?* Cool that both ways let you fidget with the guide function.
+
+```{r}
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = cty, size = cty)) +
+  guides(colour = "legend") +
+            scale_size_area(guide = "legend")
+         
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy, color = cty, size = cty)) + 
+  scale_size_area() + 
+  guides(color = "legend")
+```
+
+## Facets
+
+\
+One of the great things about facets is that they share the axes between the different panels. Sometimes this is undesirable though, and the behavior can be changed with the `scales` argument. Experiment with the different possible settings in the plot below:
+
+```{r}
+##scales are default here
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv) +
+  labs(title = "Car crap no one cares about")
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv, scales = "free") +
+  labs(title = "Car crap no one cares about")
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv, scales = "free_x") +
+  labs(title = "Car crap no one cares about")
+
+ggplot(mpg) + 
+  geom_point(aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv, scales = "free_y") +
+  labs(title = "Car crap no one cares about")
+```
+
+Omg this is so silly. I love that you can do this. How fun
+
+### Theme
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(y = class)) + 
+  facet_wrap(~year) + 
+  theme_minimal()
+```
+
+Making it as ugly as it gets!
+
+```{r}
+ggplot(mpg) + 
+  geom_bar(aes(y = class)) + 
+  facet_wrap(~year) + 
+  labs(title = "Number of car models per class",
+       caption = "source: http://fueleconomy.gov",
+       x = NULL,
+       y = NULL) +
+  scale_x_continuous(expand = c(0, NA)) + 
+  theme_minimal() + 
+    theme(
+  text = element_text(family = "Helvetica", size = 12),
+  axis.text = element_text(size = 10, color = "blue"),
+  axis.title = element_text(face = "bold"),
+  panel.background = element_rect(fill = "pink", color = "purple", linewidth = 3),
+  panel.grid.major.x = element_line(color = "yellow", linewidth = 0.5),
+  panel.grid.major.y = element_line(color = "green", size = 0.5),
+  plot.title = element_text(size = 24, hjust = 0.5, color = "purple"),
+  plot.caption = element_text(face = 'italic', size = 10, color = "darkblue"),
+  strip.text = element_text(face = 'italic', color = "orange"),
+  legend.title = element_text(face = "bold", size = 10, color = "red")
+)
+```
+
+Fucking ugooooo.
+
+\
+
+### **3.2** Simulation
+
+### **3.2.1 Voting Poll Example**
+
+```{r}
+url <- "https://raw.githubusercontent.com/acastroaraujo/socStats/main/simulation_function_week3.R"
+source(url)
+```
+
+Second, choose three parameters for the simulation:
+
+-   `dem_prob_pop`: the probability that the person will vote for "Democrats" in the population
+
+-   `sample_size`: the number of people in each "poll" (or sample)
+
+-   `num_sims`: number of simulations
+
+Third, inspect the simulation data set.
+
+```{r}
+sims <- simulation_votes(dem_prob_pop = 0.75,
+                         sample_size = 90,
+                         num_sims = 1e3)
+sims
+```
+
+```{r}
+
+sims <- simulation_votes(dem_prob_pop = 0.52, sample_size = 300, num_sims = 500)
+
+results <- sims |> 
+  group_by(id) |> 
+  summarize(dem_prop = mean(vote == "Dem"))
+
+results
+```
+
+plotty plot plot plot
+
+```{r}
+# how often does the poll predict the winner?
+mean(results$dem_prop > 0.5)
+# shade the same plot
+results <- results |> 
+  mutate(winner = if_else(dem_prop > 0.5, "Dem", "Rep"))
+
+results |> 
+  ggplot(aes(x = dem_prop, fill = winner)) +
+  geom_histogram(color = "white", boundary = .5, binwidth = .01) +
+  scale_fill_brewer(palette = "Set1", direction = -1)
+# density plot
+results |> 
+  ggplot(aes(dem_prop)) + 
+  geom_density(fill = "grey90") + 
+  geom_vline(xintercept = 0.5, linetype = "dashed")
+```
+
+In the simulation above, what is the average `dem_prop`? What is the standard deviation of `dem_prop`? How does this change for different values of `sample_size`?
+
+```{r}
+mean(results$dem_prop)
+sd(results$dem_prop)
+```
+
+An increase of sample size will produce smaller standard deviations and vice versa
+
+##### **Q7:**
+
+So I am just going to use the values you gave as examples. Also googling how to apply a function to a list... `lapply()` seems to be best choice? its got a simulation votes fr\>
+
+```{r}
+ss <- c(50, 200, 500, 1000, 2000)
+output_list <- lapply(ss, \(ss) simulation_votes(0.52, ss, num_sims = 500)) 
+
+resultss <- bind_rows(output_list) |> 
+  group_by(id, sample_size) |> 
+  summarize(dem_prop = mean(vote == "Dem"))  
+
+ggplot(resultss,
+       aes(sample_size, dem_prop)) + 
+  geom_boxplot()
+
+```
+
+Problem is that it is ugly with how the x is set up w/ the sample sizes.... it would be better to be in order for sure.
+
+so i am doing that to be cool:
+
+```{r}
+results_numeric <- bind_rows(output_list) |> 
+  mutate(sample_size = as.numeric(sample_size)) |> 
+  group_by(id, sample_size) |> 
+  summarize(dem_prop = mean(vote == "Dem")) 
+
+ggplot(results_numeric,
+       aes(sample_size, dem_prop,
+           group = sample_size)) +
+  geom_boxplot()
+```
+
+##### **Q8:**
+
+```{r}
+p <- c(.49, .52, .55, .58, .63)
+output_list <- lapply(p, \(x) simulation_votes(x, sample_size = 300, num_sims = 500)) 
+
+
+results_new <-  bind_rows(output_list) |> 
+  group_by(id, dem_prob_pop) |> 
+  summarize(dem_prop = mean(vote == "Dem")) 
+
+ggplot(results_new,
+         aes(dem_prob_pop, dem_prop)) + 
+  geom_boxplot()
+```
+
+I am pretty sure this is just comparing our p to our phat

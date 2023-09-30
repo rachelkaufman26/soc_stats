@@ -1,7 +1,16 @@
 ---
 title: "Assignment_week2"
-format: html
+format: 
+    html: 
+    theme: cosmo
+    toc: true
+    embed-resources: true
+  pdf:
+    colorlinks: true
 editor: visual
+author: "Rachel Kaufman"
+date: "2023-09-07"
+mainfont: "Georgia"
 ---
 
 ## Homework 2: dplyr
@@ -220,31 +229,69 @@ Well because you selected tailnum that tells the next pipe that `tailnum` is the
 ##### Q1:Which carrier has the worst average delays? Challenge: can you disentangle the effects of bad airports vs. bad carriers? Why/why not? (Hint: think about flights \|\> group_by(carrier, dest) \|\> summarize(n()))
 
 ```{r}
+flights |> 
+  drop_na() |> 
+  select(carrier, dep_delay) |> 
+  group_by(carrier) |> 
+  summarise(delay_min = mean(dep_delay))
 
+View(flights)
 ```
+
+tbh this whole hint thing confused me even more than the wording of the OG question. Wait the hint is for the challenge... jk. okay worst average delays that means i want to look at average delay depart time, group by carrier
 
 ##### Q2: Find the flights that are most delayed upon departure from each destination.
 
 ```{r}
-
+flights |> 
+  select(dep_delay, carrier, dep_time) |> 
+  arrange(desc(dep_delay)) |> 
+  head()
+  
 ```
+
+okay this one is depart delay and *is the top value supposed to be 1301 minutes?*
 
 ##### Q3: How do delays vary over the course of the day. Illustrate your answer with a plot.
 
 ```{r}
+ 
+
+# Combine hour and minute columns to create a new variable 'time'
+flights <- flights  |> 
+  mutate(time = hour * 60 + minute)
+
+# Create a scatterplot using ggplot2
+ggplot(flights, aes(x = time, y = dep_delay)) +
+  geom_point(alpha = 0.2) +  # Use alpha to add transparency for better visibility
+  labs(x = "Time of Day (in minutes)", y = "Departure Delay (minutes)") +
+  ggtitle("Departure Delays Over the Course of the Day")
 
 ```
+
+This plot is kinda shitty looking. Could fix it but idk I am tired, guessing we will do proper plot work \@ a later date.
 
 ##### Q4: What happens if you supply a negative n to slice_min() and friends?
 
 ```{r}
+ flights  |> 
+  select(slice_min(dep_delay, n = 1))
+
+flights |> 
+  select(slice_max(dep_delay, n = 1))
 
 ```
+
+Not good things-- So I am guessing that they have specific meanings for the negative. turns out that `slice_max()` goes with the smallest value... and for slice_min() it will select the rows w the largest values... wonky? am i reading these rights?
 
 ##### Q5: Explain what count() does in terms of the dplyr verbs you just learned. What does the sort argument to count() do?
 
 ```{r}
+flights |> 
+  count(origin, dest, sort = TRUE)
 
+flights |> 
+  count(origin, dest, sort = FALSE)
 ```
 
 ##### Q6:
@@ -266,32 +313,58 @@ df |>
   group_by(y)
 ```
 
+I mean there is not much to group by... so unsure if there would be a change, and that seems okay! these isnt anything after the group_by so kinda unimportant
+
 b.  Write down what you think the output will look like, then check if you were correct, and describe what arrange() does. Also comment on how it's different from the group_by() in part (a)?
 
 ```{r}
-
+df |>
+  arrange(y)
 ```
+
+so this should put the order of a in the alphabet for the y column-- it is different because its ordered with the alphabet. the X when you do this however (in comparison to part a) does not move around with the Y... the arrangement of Y does not not change the order of x's vector.
 
 c.  Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does.
 
 ```{r}
-
+df |>
+  group_by(y) |>
+  summarize(mean_x = mean(x))
 ```
+
+should show the means for groups of y, so `a` and `b` should be separated...so when you group by y and pipe into another argument it tells you how to separate and group the means of our variable x's rows! I was correct cool.
 
 d.  Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does. Then, comment on what the message says.
 
 ```{r}
-
+df |>
+  group_by(y, z) |>
+  summarize(mean_x = mean(x))
 ```
+
+well so when you group by 2 variables this means we will see additional like subgroup things... so y should be grouped first then group by Z! Looking at it: It will group by Y for all cases first, then group by Z.
 
 e.  Write down what you think the output will look like, then check if you were correct, and describe what the pipeline does. How is the output different from the one in part (d).
 
 ```{r}
+df |>
+  group_by(y, z) |>
+  summarize(mean_x = mean(x), .groups = "drop")
 
 ```
+
+Honestly, *I do not understand this* I see that `.groups` when = "drop" leads to droping the order that we passed through in the previous pipe. This is evident in the light grey area where it mentions being grouped by y in part d, It's likely that a more notable difference would arise if my tibble had more data.
 
 f.  Write down what you think the outputs will look like, then check if you were correct, and describe what each pipeline does. How are the outputs of the two pipelines different?
 
 ```{r}
+df |>
+  group_by(y, z) |>
+  summarize(mean_x = mean(x))
 
+df |>
+  group_by(y, z) |>
+  mutate(mean_x = mean(x))
 ```
+
+OH well summarize and mutate will do different things... mutate will lead to a new column for the mean_x that can be safed onto the df. Summarize does give you the same results but ya know... Okay now that I have ran the lines: When you mutate it separates the y and z subgroups when in the first line of code with summarize it just takes grouping by Y (overriding the argument that there are 2 variables to group by, y and z).
