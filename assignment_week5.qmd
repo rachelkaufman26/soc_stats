@@ -1,0 +1,59 @@
+---
+title: "assignment_week5"
+format: html
+editor: visual
+---
+
+## Homework week 5
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+#### Question 1
+
+```{r}
+p <- 2/3
+n <- 500
+dbinom(n, 400, p)
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
